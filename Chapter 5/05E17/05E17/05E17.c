@@ -53,19 +53,23 @@
 int getfile(char ***lines, char fn[], int len);
 int randint(int n);
 int widthof(int n);
-int pivot(void *a, int lo, int hi, int(*comp)(int, int, int), int options[]);
-int median(void *a, int x, int y, int z, int(*comp)(int, int, int), int options[]);
+int pivot(void *a, int lo, int hi, int(*comp)(int, int, int), int options[],
+          int csv[]);
+int median(void *a, int x, int y, int z, int(*comp)(int, int, int),
+           int options[], int csv[]);
 int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
-    int options[]);
+               int options[], int csv[]);
 int numcmp(int i1, int i2, int r);
 int tostrcmp(int i1, int i2, int r);
-int strcmp2(char s1[], char s2[], int options[]);
-int dstrcmp(char s1[], char s2[], char div);
+int strcmp2(char s1[], char s2[], int options[], int csv[]);
+int dstrcmp(char s1[], char s2[]);
 int quicksort(void *a, int lo, int hi, int t, int(*comp)(int, int, int),
-    int options[]);
-int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int), int options[]);
+              int options[], int csv[]);
+int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
+              int options[], int csv[]);
 void strlower(char s[]);
 void swap(void *a, int type, int p, int q);
+void getcol(char *s, int csv[]);
 double average(double *d, int n);
 
 const int GAPS[] = { 10, 4, 1, 0 };  // gap sizes to use for shell sorting
@@ -262,10 +266,40 @@ int main(int argc, char *argv[]) {
             nlines = n;
 
             // Quicksort + timing
-            begin = clock();
-            quicksort(lines, 0, n - 1, THRESHOLD, (int(*)(int, int, int))(tostrcmp),
-                options);
-            end = clock();
+            if (H) {
+                /* TODO: Implement field sorting by iterating over headers[]. Something like:
+                int csv[2], prev;
+                for (int h = 0; h < H; h++) {
+                    csv[0] =  #search through lines[0]
+                    csv[1] = delim #need to implement a way to ask for this, otherwise default ','
+                    if (h == 0)
+                        quicksort(lo = 0, hi = arrsize, ..., csv);
+                    else if (h > 0) {
+                        int p = 0;
+                        while (p < arrsize) {
+                            int l = p;
+                            char t[MAXSTRLEN], cur[MAXSTRLEN];
+                            strcpy(t, lines[l]);
+                            strcpy(cur, lines[p]);
+                            getcol(t, csv);
+                            getcol(cur, csv);
+                            for (p; p < arrsize && strcmp2(t, cur, options) != 0; p++); 
+                            int h = --p;
+                            quicksort(lo = l, hi = h, ..., csv);
+                            p++;
+                        }
+                    }
+                    prev = csv[0];
+                }
+                */
+            }
+            else {
+                int blank[] = { -1, -1 };
+                begin = clock();
+                quicksort(lines, 0, n - 1, THRESHOLD, (int(*)(int, int, int))(tostrcmp),
+                    options, blank);
+                end = clock();
+            }
 
             // Print results
             if (P) {
@@ -289,9 +323,10 @@ int main(int argc, char *argv[]) {
             // N == STRTYPE, but oh well
 
             // Quicksort + timing
+            int blank[] = { -1, -1 };
             begin = clock();
             quicksort(demo, 0, ARRSIZE - 1, THRESHOLD,
-                (int(*)(int, int, int))(N ? numcmp : tostrcmp), options);
+                (int(*)(int, int, int))(N ? numcmp : tostrcmp), options, blank);
             end = clock();
 
             // Print results
@@ -396,19 +431,20 @@ int widthof(int n) {
 *
 * Returns: index position of value to use as pivot
 */
-int pivot(void *a, int lo, int hi, int(*comp)(int, int, int), int options[]) {
+int pivot(void *a, int lo, int hi, int(*comp)(int, int, int), int options[],
+          int csv[]) {
     int ptOne = (lo + hi) / 3;
     ptOne = (ptOne < lo) ? lo : ptOne;
     int ptTwo = (ptOne + hi) / 2;
     ptTwo = (ptTwo < ptOne) ? ptOne : ptTwo;
 
     // Find the median of each third of array v between lo and hi
-    int first = median(a, lo, (lo + ptOne) / 2, ptOne, comp, options);
+    int first = median(a, lo, (lo + ptOne) / 2, ptOne, comp, options, csv);
     int second = median(a, ptOne + 1, (ptOne + 1 + ptTwo) / 2, ptTwo, comp,
-        options);
-    int third = median(a, ptTwo + 1, (ptTwo + 1 + hi) / 2, hi, comp, options);
+        options, csv);
+    int third = median(a, ptTwo + 1, (ptTwo + 1 + hi) / 2, hi, comp, options, csv);
 
-    return median(a, first, second, third, comp, options);
+    return median(a, first, second, third, comp, options, csv);
 }
 
 /**
@@ -418,7 +454,8 @@ int pivot(void *a, int lo, int hi, int(*comp)(int, int, int), int options[]) {
 * Returns: x, y, z (whichever is holds the median value), or -1 if something
 *   goes wrong
 */
-int median(void *a, int x, int y, int z, int(*comp)(int, int, int), int options[]) {
+int median(void *a, int x, int y, int z, int(*comp)(int, int, int),
+           int options[], int csv[]) {
     if (N == INTTYPE || N == STRTYPE) {
         int vX = ((int*)a)[x];
         int vY = ((int*)a)[y];
@@ -442,15 +479,15 @@ int median(void *a, int x, int y, int z, int(*comp)(int, int, int), int options[
         char *vY = ((char**)a)[y];
         char *vZ = ((char**)a)[z];
 
-        if (strcmp2(vX, vY, options) < 0) {
-            if (strcmp2(vX, vZ, options) < 0)
-                return (strcmp2(vY, vZ, options) < 0) ? y : z;
+        if (strcmp2(vX, vY, options, csv) < 0) {
+            if (strcmp2(vX, vZ, options, csv) < 0)
+                return (strcmp2(vY, vZ, options, csv) < 0) ? y : z;
             else
                 return x;
         }
         else {
-            if (strcmp2(vY, vZ, options))
-                return (strcmp2(vX, vZ, options) < 0) ? x : z;
+            if (strcmp2(vY, vZ, options, csv))
+                return (strcmp2(vX, vZ, options, csv) < 0) ? x : z;
             else
                 return y;
         }
@@ -467,7 +504,7 @@ int median(void *a, int x, int y, int z, int(*comp)(int, int, int), int options[
 * Returns: int[2] of partition indices
 */
 int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
-    int options[]) {
+               int options[], int csv[]) {
     static int fail[] = { -1, -1 };  // just in case
     int i = lo - 1;
     int j = hi + 1;
@@ -514,11 +551,11 @@ int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
         else if (N == STRSTR) {
             do {
                 i++;
-            } while (strcmp2(((char**)a)[i], (char*)pivot, options) < 0);
+            } while (strcmp2(((char**)a)[i], (char*)pivot, options, csv) < 0);
 
             do {
                 j--;
-            } while (strcmp2(((char**)a)[j], (char*)pivot, options) > 0);
+            } while (strcmp2(((char**)a)[j], (char*)pivot, options, csv) > 0);
         }
 
         // If no other pairs to swap found, return partition values
@@ -534,9 +571,9 @@ int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
                 }
                 else if (N == STRSTR) {
                     for (j; j >= lo && strcmp2(((char**)a)[j], (char*)pivot,
-                                               options) == 0; j--);
+                                               options, csv) == 0; j--);
                     for (i; i <= hi && strcmp2(((char**)a)[i], (char*)pivot,
-                                               options) == 0; i++);
+                                               options, csv) == 0; i++);
                 }
             }
             else {
@@ -597,11 +634,12 @@ int tostrcmp(int i1, int i2, int r) {
 
 /**
 * strcmp2: Basically just strcmp(), but can set options to ignore case in each
-*   sentence or even compare in reverse order.
+*   sentence or even compare in reverse order. csv is an int array where csv[0]
+*   is the column number to use, and csv[1] is the character deliminator.
 *
 * Returns: 0 if the two strs are equal, <0 if the s1<s2, >0 if s2<s1 (unless r = 1)
 */
-int strcmp2(char s1[], char s2[], int options[]) {
+int strcmp2(char s1[], char s2[], int options[], int csv[]) {
     char c1[MAXSTRLEN], c2[MAXSTRLEN];
     strcpy(c1, s1);
     strcpy(c2, s2);
@@ -609,28 +647,30 @@ int strcmp2(char s1[], char s2[], int options[]) {
         strlower(c1);
         strlower(c2);
     }
+    if (csv[0] != -1) {
+        getcol(c1, csv);
+        getcol(c2, csv);
+    }
     if (D)
-        return R ? dstrcmp(c2, c1, DIVCHAR) : dstrcmp(c1, c2, DIVCHAR);
+        return R ? dstrcmp(c2, c1) : dstrcmp(c1, c2);
     else
         return R ? strcmp(c2, c1) : strcmp(c1, c2);
 }
 
 /**
 * dstrcmp: Like strcmp, but suited for directory path comparison by only making
-*   comparisons on letters, numbers, and blanks. Note that the file path div 
-*   character technically doesn't need to be passed in, but I'm going to leave it
-*   for now in case I want to use it to implement something in the future.
+*   comparisons on letters, numbers, and blanks.
 *
 * Returns: 0 if the two paths are equal, <0 if the s1<s2, >0 if s2<s1 (unless r = 1)
 */
-int dstrcmp(char s1[], char s2[], char div) {
+int dstrcmp(char s1[], char s2[]) {
     int i;
-    for (i = 0; (isalnum(s1[i]) || isblank(s1[i])) &&
-                (isalnum(s2[i]) || isblank(s2[i])) && (s1[i] == s2[i]); i++);
-        if (s1[i] == 0 && s2[i] == 0)
-            return 0;
-        else
-            return s2[i] - s1[i];
+    for (i = 0; (isalnum(s1[i]) || isblank(s1[i]))
+        && (isalnum(s2[i]) || isblank(s2[i])) && (s1[i] == s2[i]); i++);
+    if (s1[i] == 0 && s2[i] == 0)
+        return 0;
+    else
+        return s2[i] - s1[i];
 }
 
 /**
@@ -641,9 +681,35 @@ void strlower(char s[]) {
 }
 
 /**
+ * getcol: Takes string s, and uses int[] csv to pull out the relevant column.
+ *   csv is an int array where csv[0] is the column number to use, and csv[1]
+ *   is the character deliminator.
+ */
+void getcol(char *s, int csv[]) {
+    int b = -1, e, col = 1, q = 0, i;
+    for (i = 0; i < (int)strlen(s) && col <= csv[0]; i++) {
+        if (!q) {
+            if (s[i] == '\'' || s[i] == '"')
+                q = 1;
+            else if (s[i] == csv[1])
+                col++;
+            if (col == csv[0] && b == -1)
+                b = i + 1;
+        }
+        else if (s[i] == '\'' || s[i] == '"')
+            q = 0;
+    }
+    e = i;
+    for (i = 0; (i + b) < e; i++)
+        s[i] = s[i + b];
+    s[i] = 0;
+}
+
+/**
 * Shell sort algorithm
 */
-int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int), int options[]) {
+int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
+              int options[], int csv[]) {
     // Temp pointer to be used with shifting elements
     void *temp = malloc(sizeof(char));
     int e = 0;
@@ -687,7 +753,7 @@ int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int), int options[])
                 if (N == INTTYPE || N == STRTYPE)
                     res = (*comp)(*((int*)temp), ((int*)a)[j - GAPS[g]], R);
                 else  // STRSTR
-                    res = strcmp2((char*)temp, ((char**)a)[j - GAPS[g]], options);
+                    res = strcmp2((char*)temp, ((char**)a)[j - GAPS[g]], options, csv);
 
                 if (res < 0)
                     swap(a, N, j, j - GAPS[g]);
@@ -713,25 +779,25 @@ int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int), int options[])
 * Recursive quicksort algorithm
 */
 int quicksort(void *a, int lo, int hi, int t, int(*comp)(int, int, int),
-              int options[]) {
+              int options[], int csv[]) {
     // Base case. Do nothing if there are fewer than two elements in subarray
     if (lo >= hi)
         return 0;
     // Arrays smaller than threshold size t will be sorted with shell sort
     if (hi - lo + 1 <= t)  // '+1' to make it an inclusive range
-        return shellsort(a, lo, hi, comp, options);
+        return shellsort(a, lo, hi, comp, options, csv);
 
-    int p = pivot(a, lo, hi, comp, options);              // pivot index
-    int *parts = partition(a, lo, p, hi, comp, options);  // partition indices
+    int p = pivot(a, lo, hi, comp, options, csv);              // pivot index
+    int *parts = partition(a, lo, p, hi, comp, options, csv);  // partition indices
 
     // Recursion over the two partitions, starting with the smaller of the two
     if (parts[0] - lo <= hi - parts[1]) {
-        quicksort(a, lo, parts[0], t, comp, options);
-        return quicksort(a, parts[1], hi, t, comp, options);
+        quicksort(a, lo, parts[0], t, comp, options, csv);
+        return quicksort(a, parts[1], hi, t, comp, options, csv);
     }
     else {
-        quicksort(a, parts[1], hi, t, comp, options);
-        return quicksort(a, lo, parts[0], t, comp, options);
+        quicksort(a, parts[1], hi, t, comp, options, csv);
+        return quicksort(a, lo, parts[0], t, comp, options, csv);
     }
 }
 
