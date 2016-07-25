@@ -1,0 +1,22 @@
+﻿Build started 7/6/2016 6:33:29 PM.
+     1>Project "C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\05_stringsort\05_stringsort.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:prompt 05_stringsort.c
+         05_stringsort.c
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(14): warning C4028: formal parameter 1 different from declaration
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(14): warning C4028: formal parameter 2 different from declaration
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(16): warning C4030: first formal parameter list longer than the second list
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(16): warning C4028: formal parameter 1 different from declaration
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(16): warning C4028: formal parameter 2 different from declaration
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(16): warning C4028: formal parameter 3 different from declaration
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05_stringsort\05_stringsort\05_stringsort.c(16): warning C4273: 'qsort': inconsistent dll linkage
+         c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\corecrt_search.h(53): note: see previous definition of 'qsort'
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\Debug\05_stringsort.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\Debug\05_stringsort.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\Debug\05_stringsort.lib" /MACHINE:X86 Debug\05_stringsort.obj
+            Creating library C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\Debug\05_stringsort.lib and object C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\Debug\05_stringsort.exp
+         05_stringsort.vcxproj -> C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\Debug\05_stringsort.exe
+     1>Done Building Project "C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05_stringsort\05_stringsort\05_stringsort.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.79

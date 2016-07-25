@@ -1,0 +1,14 @@
+﻿Build started 5/10/2016 6:19:42 PM.
+     1>Project "V:\Coding\_Practice\C\K & R, The C Programming Language\Chapter 1\01E23\01E23\01E23.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:prompt 01E23.c
+         01E23.c
+     1>v:\coding\_practice\c\k & r, the c programming language\chapter 1\01e23\01e23\01e23.c(10): warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"V:\Coding\_Practice\C\K & R, The C Programming Language\Chapter 1\01E23\Debug\01E23.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"V:\Coding\_Practice\C\K & R, The C Programming Language\Chapter 1\01E23\Debug\01E23.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"V:\Coding\_Practice\C\K & R, The C Programming Language\Chapter 1\01E23\Debug\01E23.lib" /MACHINE:X86 Debug\01E23.obj
+         01E23.vcxproj -> V:\Coding\_Practice\C\K & R, The C Programming Language\Chapter 1\01E23\Debug\01E23.exe
+     1>Done Building Project "V:\Coding\_Practice\C\K & R, The C Programming Language\Chapter 1\01E23\01E23\01E23.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.93
