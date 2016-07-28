@@ -50,6 +50,8 @@
 #define DIRECTORY   'd'     // Compares only letters, numbers, and blanks
 #define HEADER      'h'     // Sort by fields
 
+typedef enum {False = 0, True} bool;
+
 int getfile(char ***lines, char fn[], int len);
 int randint(int n);
 int widthof(int n);
@@ -67,10 +69,12 @@ int quicksort(void *a, int lo, int hi, int t, int(*comp)(int, int, int),
               int options[], int csv[]);
 int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
               int options[], int csv[]);
+int getCol(char header[], char name[], char delim);
 void strlower(char s[]);
 void swap(void *a, int type, int p, int q);
-void getcol(char *s, int csv[]);
+void getColVal(char *s, int csv[]);
 double average(double *d, int n);
+int getColPos(char line[], int col, char delim);  // UNUSED
 
 const int GAPS[] = { 10, 4, 1, 0 };  // gap sizes to use for shell sorting
 int options[] = {  // Parse options
@@ -181,6 +185,7 @@ int main(int argc, char *argv[]) {
                             return 1;
                         }
                         H++;
+                        i++;
                         break;
                     }
                     default:
@@ -267,31 +272,44 @@ int main(int argc, char *argv[]) {
 
             // Quicksort + timing
             if (H) {
-                /* TODO: Implement field sorting by iterating over headers[]. Something like:
+                begin = clock();
+                //TODO: Parse options for each header field to sort by before sorting
+                //TODO: Debug sorting multiple fields
                 int csv[2], prev;
+                char delim = ',';  //TODO: Implement a way to ask for this
+                csv[1] = delim;
                 for (int h = 0; h < H; h++) {
-                    csv[0] =  #search through lines[0]
-                    csv[1] = delim #need to implement a way to ask for this, otherwise default ','
+                    csv[0] = getCol(lines[0], headers[h][1], csv[1]);
+                    if (!csv[0]) {
+                        printf("ERROR: Couldn't find column named %s\n", headers[h][1]);
+                        return 1;
+                    }
                     if (h == 0)
-                        quicksort(lo = 0, hi = arrsize, ..., csv);
-                    else if (h > 0) {
-                        int p = 0;
-                        while (p < arrsize) {
-                            int l = p;
+                        quicksort(lines, 1, n - 1, THRESHOLD,
+                                  (int(*)(int, int, int))(tostrcmp), options,
+                                  csv);
+                    else {  // subsequent sorts
+                        int p = 1;
+                        while (p < n) {
+                            int lo = p;
                             char t[MAXSTRLEN], cur[MAXSTRLEN];
-                            strcpy(t, lines[l]);
-                            strcpy(cur, lines[p]);
-                            getcol(t, csv);
-                            getcol(cur, csv);
-                            for (p; p < arrsize && strcmp2(t, cur, options) != 0; p++); 
-                            int h = --p;
-                            quicksort(lo = l, hi = h, ..., csv);
+                            strcpy(t, lines[lo]);
+                            int prevcsv[] = { prev, delim };
+                            for (p; p < n; p++) {
+                                strcpy(cur, lines[p]);
+                                if (strcmp2(t, cur, options, prevcsv) != 0)
+                                    break;
+                            }
+                            int hi = --p;
+                            quicksort(lines, lo, hi, THRESHOLD,
+                                      (int(*)(int, int, int))(tostrcmp),
+                                      options, csv);
                             p++;
                         }
                     }
                     prev = csv[0];
                 }
-                */
+                end = clock();
             }
             else {
                 int blank[] = { -1, -1 };
@@ -347,7 +365,7 @@ int main(int argc, char *argv[]) {
 
     printf("\nTime spent sorting %d %s %d times %s:\n",
         F ? nlines : ARRSIZE, F ? "lines of text" : "numbers", X,
-        N ? "numerically" : "as strings");
+        (N == INTTYPE) ? "numerically" : "as strings");
     for (int t = 0; t < X; t++)
         printf("\tTrial %d:\t%.3f seconds\n", t + 1, timeSpent[t]);
     printf("\nAverage: %.3f seconds\n", average(timeSpent, X));
@@ -424,6 +442,56 @@ int widthof(int n) {
     return i;
 }
 /* END OVERHEAD STUFF */
+
+/* CSV COLUMN RELATED FUNCTIONS */
+/**
+ * getCol: Gets the column number of the column named 'name'. Uses the header
+ *   to search. 'delim' signifies the character used to delineate a new column.
+ *   Ignores delim characters within quotes (' or "), so those probably
+ *   shouldn't be used as delim characters.
+ *
+ * Returns: the column position of column 'name' (1-indexed), 0 if it doesn't
+ *   exist
+ */
+int getCol(char header[], char name[], char delim) {
+    unsigned int i, j, col = 1;
+    bool inQuote = False;
+    for (i = 0; i < strlen(header); i++) {
+        char q;
+        if (!inQuote && (header[i] == '\'' || header[i] == '"')) {
+            inQuote = True;
+            q = header[i];
+            i++;
+        }
+        for (j = 0; j < strlen(name) && header[i + j] == name[j]; j++) {
+            if (inQuote && q == header[i + j])
+                inQuote = False;
+            if (!inQuote) {
+                if (header[i + j] == delim)
+                    break;
+                else if (header[i + j] == '\'' || header[i + j] == '"') {
+                    inQuote = True;
+                    q = header[i];
+                }
+            }
+        }
+        if (inQuote && header[i + j] == q) {
+            inQuote = False;
+            i++;
+        }
+        if (name[j] == 0 && header[i + j] == delim)
+                return col;
+        else if (header[i + j] == 0)
+            return 0;
+
+        while (i < strlen(header) && header[++i] != delim);
+        if (header[i] = 0)
+            return 0;
+        else
+            col++;
+    }
+    return 0;
+}
 
 /* SORTING HELPER FUNCTIONS */
 /**
@@ -643,13 +711,13 @@ int strcmp2(char s1[], char s2[], int options[], int csv[]) {
     char c1[MAXSTRLEN], c2[MAXSTRLEN];
     strcpy(c1, s1);
     strcpy(c2, s2);
-    if (F) {
+    if (I) {
         strlower(c1);
         strlower(c2);
     }
     if (csv[0] != -1) {
-        getcol(c1, csv);
-        getcol(c2, csv);
+        getColVal(c1, csv);
+        getColVal(c2, csv);
     }
     if (D)
         return R ? dstrcmp(c2, c1) : dstrcmp(c1, c2);
@@ -685,7 +753,7 @@ void strlower(char s[]) {
  *   csv is an int array where csv[0] is the column number to use, and csv[1]
  *   is the character deliminator.
  */
-void getcol(char *s, int csv[]) {
+void getColVal(char *s, int csv[]) {
     int b = -1, e, col = 1, q = 0, i;
     for (i = 0; i < (int)strlen(s) && col <= csv[0]; i++) {
         if (!q) {
@@ -700,6 +768,7 @@ void getcol(char *s, int csv[]) {
             q = 0;
     }
     e = i;
+    b--;
     for (i = 0; (i + b) < e; i++)
         s[i] = s[i + b];
     s[i] = 0;
@@ -812,4 +881,38 @@ double average(double *d, int n) {
     for (int i = 0; i < n; i++)
         avg += d[i];
     return avg / (double)n;
+}
+
+
+/* UNUSED */
+/**
+* getColPos: Finds where in string line the column in position col starts.
+*   The returned int will be the first character after the delimiter character
+*   (0-indexed position).
+*
+* Returns: the char index in line (0-indexed) where column number col starts,
+*   or -1 if it doesn't exist
+*/
+int getColPos(char line[], int col, char delim) {
+    int c = 1, i;
+    bool inQuote = False;
+    char q;
+    for (i = 0; i < (int)strlen(line); i++) {
+        if (!inQuote) {
+            if (line[i] == '\'' || line[i] == '"') {
+                inQuote = True;
+                q = line[i];
+            }
+            else if (line[i] == delim)
+                c++;
+            if (c == col)
+                break;
+        }
+        else if (line[i] == q)
+            inQuote = False;
+    }
+    if (line[i] == 0)
+        return -1;
+    else
+        return i + 1;
 }
