@@ -36,9 +36,11 @@
 #define INTTYPE     1       // Sorting an int array as ints
 #define STRTYPE     0       // Sorting an int array as strings
 #define STRSTR      2       // Sorting a string array
+#define STR2INT     3       // Sorting a string array converted to ints first
 #define DIVCHAR     '\\'    // Divider character for file paths in Windows
 #define HEADARGS    0       // Position in header array of args
 #define HEADNAME    1       // Position in header array of field name
+#define NUMOPTIONS  8       // Number of options
 
 // Possible option codes
 #define USEFILE     'f'     // specify a file with lines of text to sort
@@ -70,6 +72,7 @@ int quicksort(void *a, int lo, int hi, int t, int(*comp)(int, int, int),
 int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
               int options[], int csv[]);
 int getCol(char header[], char name[], char delim);
+void copyoptions(int dest[], int source[], int len);
 void strlower(char s[]);
 void swap(void *a, int type, int p, int q);
 void getColVal(char *s, int csv[]);
@@ -107,7 +110,7 @@ int main(int argc, char *argv[]) {
     int fnPos;
     if (argc > OPTIONSAT - 1) {
         for (int i = OPTIONSAT; i < argc; i++) {
-            if (argv[i][0] == '-' && strlen(argv[i]) == 2) {
+            if (argv[i][0] == '-' && strlen(argv[i]) >= 2) {
                 switch (argv[i][1]) {
                     case USEFILE:       // Gets lines of text from a specified file
                         F = 1;
@@ -165,15 +168,15 @@ int main(int argc, char *argv[]) {
                     case HEADER:        // Sets various header options
                     {
                         int err = 0;
-                        int params = (i + 1 < argc && argv[i + 1][0] != '-') ? 2 : 1;
-                        if ((headers = malloc(sizeof(char**) * (H + 1))) != NULL) {
-                            if ((headers[H] = malloc(sizeof(char*) * params)) != NULL) {
-                                for (int p = 0; p < params; p++) {
-                                    if ((headers[H][p] = malloc(sizeof(char[MAXSTRLEN]))) != NULL)
-                                        strcpy(headers[H][p], argv[i + p]);
-                                    else
-                                        err = 1;
+                        if ((headers = realloc(headers, sizeof(char**) * (H + 1))) != NULL) {
+                            if ((headers[H] = malloc(sizeof(char*) * 2)) != NULL) {
+                                if ((headers[H][0] = malloc(sizeof(char[MAXSTRLEN]))) != NULL &&
+                                    (headers[H][1] = malloc(sizeof(char[MAXSTRLEN]))) != NULL) {
+                                    strcpy(headers[H][0], argv[i++]);
+                                    strcpy(headers[H][1], argv[i]);
                                 }
+                                else
+                                    err = 1;
                             }
                             else
                                 err = 1;
@@ -185,7 +188,6 @@ int main(int argc, char *argv[]) {
                             return 1;
                         }
                         H++;
-                        i++;
                         break;
                     }
                     default:
@@ -273,8 +275,6 @@ int main(int argc, char *argv[]) {
             // Quicksort + timing
             if (H) {
                 begin = clock();
-                //TODO: Parse options for each header field to sort by before sorting
-                //TODO: Debug sorting multiple fields
                 int csv[2], prev;
                 char delim = ',';  //TODO: Implement a way to ask for this
                 csv[1] = delim;
@@ -283,6 +283,27 @@ int main(int argc, char *argv[]) {
                     if (!csv[0]) {
                         printf("ERROR: Couldn't find column named %s\n", headers[h][1]);
                         return 1;
+                    }
+                    // Parse through other options
+                    int oldoptions[NUMOPTIONS];
+                    copyoptions(oldoptions, options, NUMOPTIONS);
+                    if (strlen(headers[h][0]) > 2) {
+                        for (int o = 2; headers[h][0][o]; o++) {
+                            switch (headers[h][0][o]) {
+                                case NUMERIC:       // Sets option to sort numerically
+                                    N = STR2INT;
+                                    break;
+                                case REVERSE:       // Sets option to sort in reverse order
+                                    R = 1;
+                                    break;
+                                case IGNORE:        // Sets option to ignore letter case
+                                    I = 1;
+                                    break;
+                                case DIRECTORY:     // Sets option to treat strings as filepaths
+                                    D = 1;
+                                    break;
+                            }
+                        }
                     }
                     if (h == 0)
                         quicksort(lines, 1, n - 1, THRESHOLD,
@@ -297,7 +318,7 @@ int main(int argc, char *argv[]) {
                             int prevcsv[] = { prev, delim };
                             for (p; p < n; p++) {
                                 strcpy(cur, lines[p]);
-                                if (strcmp2(t, cur, options, prevcsv) != 0)
+                                if (strcmp2(t, cur, oldoptions, prevcsv) != 0)
                                     break;
                             }
                             int hi = --p;
@@ -485,7 +506,7 @@ int getCol(char header[], char name[], char delim) {
             return 0;
 
         while (i < strlen(header) && header[++i] != delim);
-        if (header[i] = 0)
+        if (header[i] == 0)
             return 0;
         else
             col++;
@@ -542,7 +563,7 @@ int median(void *a, int x, int y, int z, int(*comp)(int, int, int),
                 return y;
         }
     }
-    else if (N == STRSTR) {
+    else if (N == STRSTR || N == STR2INT) {
         char *vX = ((char**)a)[x];
         char *vY = ((char**)a)[y];
         char *vZ = ((char**)a)[z];
@@ -586,7 +607,7 @@ int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
             else
                 e = 1;
         }
-        else if (N == STRSTR) {
+        else if (N == STRSTR || N == STR2INT) {
             // Copy string at a[p] into pivot so pivot doesn't change
             if ((pivot = (char*)malloc(sizeof(char[MAXSTRLEN]))) != NULL)
                 strcpy((char*)pivot, ((char**)a)[p]);
@@ -616,7 +637,7 @@ int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
                 j--;
             } while ((*comp)(((int*)a)[j], *((int*)pivot), R) > 0);
         }
-        else if (N == STRSTR) {
+        else if (N == STRSTR || N == STR2INT) {
             do {
                 i++;
             } while (strcmp2(((char**)a)[i], (char*)pivot, options, csv) < 0);
@@ -637,7 +658,7 @@ int *partition(void *a, int lo, int p, int hi, int(*comp)(int, int, int),
                     for (i; i <= hi && (*comp)(((int*)a)[i], *((int*)pivot),
                                                R) == 0; i++);
                 }
-                else if (N == STRSTR) {
+                else if (N == STRSTR || N == STR2INT) {
                     for (j; j >= lo && strcmp2(((char**)a)[j], (char*)pivot,
                                                options, csv) == 0; j--);
                     for (i; i <= hi && strcmp2(((char**)a)[i], (char*)pivot,
@@ -670,7 +691,7 @@ void swap(void *a, int type, int p, int q) {
         ((int*)a)[p] = ((int*)a)[q];
         ((int*)a)[q] = temp;
     }
-    else if (type == STRSTR) {
+    else if (type == STRSTR || type == STR2INT) {
         char temp[MAXSTRLEN];
         strcpy(temp, ((char**)a)[p]);
         strcpy(((char**)a)[p], ((char**)a)[q]);
@@ -721,6 +742,8 @@ int strcmp2(char s1[], char s2[], int options[], int csv[]) {
     }
     if (D)
         return R ? dstrcmp(c2, c1) : dstrcmp(c1, c2);
+    else if (N == STR2INT)
+        return numcmp(atoi(c1), atoi(c2), R);
     else
         return R ? strcmp(c2, c1) : strcmp(c1, c2);
 }
@@ -739,6 +762,14 @@ int dstrcmp(char s1[], char s2[]) {
         return 0;
     else
         return s2[i] - s1[i];
+}
+
+/**
+ * copyoptions: Basically copies an int array into another array
+ */
+void copyoptions(int dest[], int source[], int len) {
+    for (int o = 0; o < len; o++)
+        dest[o] = source[o];
 }
 
 /**
@@ -787,7 +818,7 @@ int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
             if ((temp = (int*)malloc(sizeof(int))) == NULL)
                 e = 1;
         }
-        else {  // STRSTR
+        else {  // STRSTR || STR2INT
             if ((temp = (char*)malloc(sizeof(char[MAXSTRLEN]))) == NULL)
                 e = 1;
         }
@@ -809,7 +840,7 @@ int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
             // Store a[i] in temp in case it needs to be shifted
             if (N == INTTYPE || N == STRTYPE)
                 *((int*)temp) = ((int*)a)[i];
-            else  // STRSTR
+            else  // STRSTR || STR2INT
                 strcpy((char*)temp, ((char**)a)[i]);
 
             /* Check each item sequentially, comparing them to all of the other
@@ -821,7 +852,7 @@ int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
                 int res;
                 if (N == INTTYPE || N == STRTYPE)
                     res = (*comp)(*((int*)temp), ((int*)a)[j - GAPS[g]], R);
-                else  // STRSTR
+                else  // STRSTR || STR2INT
                     res = strcmp2((char*)temp, ((char**)a)[j - GAPS[g]], options, csv);
 
                 if (res < 0)
@@ -833,7 +864,7 @@ int shellsort(void *a, int lo, int hi, int(*comp)(int, int, int),
             // Put temp where there is now an empty slot in j
             if (N == INTTYPE || N == STRTYPE)
                 ((int*)a)[j] = *((int*)temp);
-            else  // STRSTR
+            else  // STRSTR || STR2INT
                 strcpy(((char**)a)[j], temp);
         }
     }
