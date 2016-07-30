@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="05E18.c">
+    <ClCompile Include="05_dcl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
