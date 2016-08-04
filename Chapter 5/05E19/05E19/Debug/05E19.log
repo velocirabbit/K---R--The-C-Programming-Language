@@ -1,0 +1,14 @@
+﻿Build started 8/1/2016 4:19:35 PM.
+     1>Project "C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05E19\05E19\05E19.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TC /analyze- /errorReport:prompt 05E19.c
+         05E19.c
+     1>c:\users\andrew\onedrive\velocirabbit\coding\_practice\c\k & r, the c programming language\chapter 5\05e19\05e19\05e19.c(51): warning C4013: 'system' undefined; assuming extern returning int
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05E19\Debug\05E19.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05E19\Debug\05E19.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05E19\Debug\05E19.lib" /MACHINE:X86 Debug\05E19.obj
+         05E19.vcxproj -> C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05E19\Debug\05E19.exe
+     1>Done Building Project "C:\Users\Andrew\OneDrive\Velocirabbit\Coding\_Practice\C\K & R, The C Programming Language\Chapter 5\05E19\05E19\05E19.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.02

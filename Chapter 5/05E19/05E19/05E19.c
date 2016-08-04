@@ -1,4 +1,4 @@
-/* 05E18 (p. 126) */
+/* 05E19 (p. 126) */
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
@@ -18,6 +18,7 @@ void dirdcl(void);
 void ungetch(int c);
 int getch(bool ignWhtSp);
 int gettoken(void);
+int getprecedence(char c);
 
 int tokentype;              // type of last token
 int buffp = 0;              // next free position in buff
@@ -78,15 +79,21 @@ void processdcl(void) {
 */
 void processundcl(void) {
     int type;
+    int lastprec = -1;
     char temp[MAXTOKEN];
 
     while (gettoken() != EOF) {
         strcpy(out, token);
         while ((type = gettoken()) != '\n') {
-            if (type == PARENS || type == BRACKETS)
+            if (type == PARENS || type == BRACKETS) {
+                if (getprecedence(type) > lastprec && lastprec != -1) {
+                    sprintf(temp, "(%s)", out);
+                    strcpy(out, temp);
+                }
                 strcat(out, token);
+            }
             else if (type == '*') {
-                sprintf(temp, "(*%s)", out);
+                sprintf(temp, "*%s", out);
                 strcpy(out, temp);
             }
             else if (type == NAME) {
@@ -95,6 +102,7 @@ void processundcl(void) {
             }
             else
                 printf("ERROR: Invalid input at %s\n", token);
+            lastprec = (type != NAME) ? getprecedence(type) : -1;
         }
         printf("\t%s\n", out);
     }
@@ -197,4 +205,22 @@ int gettoken(void) {
     }
     else
         return tokentype = c;
+}
+
+/**
+ * getprecedence: Returns an operation precedence value for the operation defined
+ *   by string c. Note that this should probably only be used for comparisons.
+ * 
+ * Returns: int symbolizing precedence order (larger value is higher precedence)
+ */
+int getprecedence(char c) {
+    char lvl14[] = { PARENS, BRACKETS, '.' };
+    char lvl13[] = { '|', '-', '+', '*', '&' };
+    for (int i = 0; i < 3; i++)
+        if (c == lvl14[i])
+            return 14;
+    for (int i = 0; i < 5; i++)
+        if (c == lvl13[i])
+            return 13;
+    return 0;
 }
