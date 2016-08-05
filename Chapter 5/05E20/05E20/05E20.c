@@ -95,7 +95,6 @@ void processdcl(void) {
 * processundcl: Runs the undcl parsing function on the input string
 */
 void processundcl(void) {
-    //TODO: dcl works, debug undcl
     int type;
     int lastprec = -1;
     char temp[MAXTOKEN];
@@ -107,7 +106,7 @@ void processundcl(void) {
                 case PARENS: case BRACKETS:
                 {
                     if (getprecedence(type) > lastprec && lastprec != -1) {
-                        sprintf("temp, (%s)", out);
+                        sprintf(temp, "(%s)", out);
                         strcpy(out, temp);
                     }
                     strcat(out, token);
@@ -119,20 +118,13 @@ void processundcl(void) {
                     strcpy(out, temp);
                     break;
                 }
-                case NAME:
+                case NAME: case TYPE: case QUAL:
                 {
                     if (!inArgs)
                         sprintf(temp, "%s %s", token, out);
                     else
                         sprintf(temp, "%s %s,", out, token);
                     strcpy(out, temp);
-                    break;
-                }
-                case TYPE: case QUAL:
-                {
-                    if (!inArgs)
-                        strcat(out, " ");
-                    strcat(out, datatype);
                     break;
                 }
                 case ARGS:
@@ -153,7 +145,8 @@ void processundcl(void) {
                     break;
                 }
             }
-            lastprec = (type != NAME) ? getprecedence(type) : -1;
+            lastprec = (type != NAME && type != TYPE && type != QUAL) ?
+                getprecedence(type) : -1;
         }
         printf("\t%s\n", out);
     }
