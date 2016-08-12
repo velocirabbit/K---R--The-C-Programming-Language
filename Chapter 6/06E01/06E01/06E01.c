@@ -114,19 +114,10 @@ Bool ok2Read(char *word) {
             almostComment = False;
         }
     }
-    
+    lineStart = False;
     // Check to see if we remain in any of them
     if (!result) {  // but only if we haven't just entered them
-        lineStart = False;
-        if (word[0] == '\n' && !escaped) {
-            if (inComment && comCh == '/')
-                inComment = False;
-            if (!inQuote && !inComment) {
-                lineStart = True;
-                inPreProc = False;
-            }
-        }
-        else if (inQuote && !escaped && word[0] == '"')
+        if (inQuote && !escaped && word[0] == '"')
             inQuote = False;
         else if (inComment && comCh == '*') {
             if (word[0] == '*')
@@ -138,13 +129,19 @@ Bool ok2Read(char *word) {
             }
         }
     }
+    if (word[0] == '\n' && !escaped) {
+        if (inComment && comCh == '/')
+            inComment = False;
+        if (!inQuote && !inComment) {
+            lineStart = True;
+            inPreProc = False;
+        }
+    }
     if (escaped)
         escaped = False;
 
     // If we're in any of the three, result = False
-    if (inComment || inQuote || inPreProc)
-        result = False;
-
+    result = (inComment || inQuote || inPreProc) ? False : True;
     return result;
 }
 
@@ -175,7 +172,7 @@ int getword(char *word, int lim) {
     int c;
     char *w = word;
 
-    while (isspace(c = getch()));
+    while (isspace(c = getch()) && c != '\n');
     if (c != EOF)
         *w++ = c;
     if (!isalpha(c) && c != '_') {
