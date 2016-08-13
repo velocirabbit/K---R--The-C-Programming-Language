@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{44D5B1E2-3048-4F67-9FF5-2ADDF4D74E35}</ProjectGuid>
+    <ProjectGuid>{7E74BDB6-2233-4166-8883-745B4DD72BB9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>My06E02</RootNamespace>
+    <RootNamespace>My06_getwordptr</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -146,7 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="06E02.c" />
+    <ClCompile Include="06_getwordptr.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

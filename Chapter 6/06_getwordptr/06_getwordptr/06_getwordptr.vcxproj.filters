@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="06E02.c">
+    <ClCompile Include="06_getwordptr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{44D5B1E2-3048-4F67-9FF5-2ADDF4D74E35}</ProjectGuid>
+    <ProjectGuid>{5A381E83-2C40-4D59-9312-F0F0DC3D8C9D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>My06E02</RootNamespace>
+    <RootNamespace>My06_getwordcount</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -146,7 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="06E02.c" />
+    <ClCompile Include="06_getwordcount.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
