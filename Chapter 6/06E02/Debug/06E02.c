@@ -54,8 +54,6 @@ const char *TYPES[] = {
  */
 int main(int argc, char *argv[]) {
     checkArgs(argc, argv);
-    if (varChars == 0)
-        return 1;
 
     int n;
     char **lines = malloc(sizeof(char**));
@@ -264,7 +262,6 @@ void checkArgs(int argc, char *argv[]) {
             break;
         default:
             printUsageStatement();
-            varChars = 0;
             break;
     }
 }
