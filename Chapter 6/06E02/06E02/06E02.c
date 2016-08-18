@@ -28,10 +28,10 @@ typedef struct s_varname {
  * Function prototypes
  */
 int getfile(char ***lines, char fn[], int len);
-int findVarNames(varname *vn, char ***lines, int n);
-int saveVars(char *line, varname *vn);
+int findVarNames(varname **vn, char ***lines, int n);
+int saveVars(char *line, varname **vn);
 int isvartype(char *w);
-bool getword(char *line, char *w);
+bool getword(char **line, char *w);
 varname *add2tree(varname *vn, char *w, vartype t);
 varname *talloc(void);
 char *safecopy(char *s);
@@ -43,6 +43,7 @@ void printUsageStatement(void);
  * Global variables and constants
  */
 int varChars = 6;
+bool flagged = False;
 const char *TYPES[] = {
     "void", "char", "short", "int", "long",
     "float", "double", "signed", "unsigned",
@@ -72,10 +73,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Find each unique variable name and save it to the tree
-    varname root;
+    varname *root = NULL;  // must set this to NULL otherwise
     findVarNames(&root, &lines, n);
     // Print it all out
-    treeprint(&root);
+    printf("\n");
+    treeprint(root);
 
     // Clean up pointers
     for (--n; n >= 0; n--)
@@ -125,7 +127,7 @@ int getfile(char ***lines, char fn[], int len) {
  *
  * Returns: The number of nodes added.
  */
-int findVarNames(varname *vn, char ***lines, int n) {
+int findVarNames(varname **vn, char ***lines, int n) {
     int inLine = 0;
     int total = 0;
     for (int i = 0; i < n; i++) // iterate through each line
@@ -140,12 +142,21 @@ int findVarNames(varname *vn, char ***lines, int n) {
  *
  * Returns: The number of variables defined and saved to vars.
  */
-int saveVars(char *line, varname *vn) {
-    int count = 0, t;
+int saveVars(char *line, varname **vn) {
+    int count = 0, t = 0;
+    static oldt;
     char w[MAXSTRLEN];
-    while (getword(line, w)) {
+    while (getword(&line, w)) {
+        oldt = t;
         if ((t = isvartype(w)) > -1)
-            add2tree(vn, w, (vartype)t);
+            flagged = True;
+        else if (flagged && w[0] != '\n') {
+            *vn = add2tree(*vn, w, (vartype)oldt);
+            count++;
+            flagged = False;
+        }
+        else
+            flagged = False;
     }
     return count;
 }
@@ -168,15 +179,20 @@ int isvartype(char *w) {
  *
  * Returns: True if a word was found, False if not.
  */
-bool getword(char *line, char *w) {
-    while (!isalnum(*line) && *line != '_') {
-        if (*line == '\0')
+bool getword(char **line, char *w) {
+    while (!isalnum(**line) && **line != '_') {
+        if (**line == '\0')
             return False;
+        else if (**line == '\n') {
+            *w++ = *(*line)++;
+            *w = '\0';
+            return True;
+        }
         else
-            line++;
+            *(*line)++;
     }
-    while (isalnum(*line) || *line == '_')
-        *w++ = *line++;
+    while (isalnum(**line) || **line == '_')
+        *w++ = *(*line)++;
     *w = '\0';
     return True;
 }
