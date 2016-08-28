@@ -16,14 +16,16 @@ typedef struct s_nlist {  // table entry:
     struct s_nlist *next;   // next entry in chain
     char *name;             // defined name
     char *defn;             // replacement text
+    char **args;            // variable names
 } nlist;
 static nlist *hashtab[HASHSIZE];  // pointer table
 
 int getword(char **line, char *w);
 unsigned hash(char *s);  // hashing function
 nlist *lookup(char *s);  // lookup function
-nlist *install(char *name, char *defn);
+nlist *install(char *name, char *defn, char **args);
 char *strdup2(char *s);
+char **checkargs(char *s);
 void undef(char *name);
 void trim(char **line);
 
@@ -41,6 +43,7 @@ int main(void) {
             if ((np = lookup(key)) == NULL)
                 printf("Could not find a key name '%s'\n", key);
             else {
+                //TODO: Check for args and put into value
                 for (np; np != NULL; np = np->next)
                     if (strcmp(np->name, key) == 0)
                         printf("\t%s\n", np->defn);
@@ -49,10 +52,12 @@ int main(void) {
         else if (getword(&line, directive) > 0) {
             // Execute a directive
             if (strcmp(directive, DEFINE) == 0) {
+                char **args;
                 getword(&line, key);
+                args = checkargs(key);
                 trim(&line);
                 strcpy(value, line);
-                install(key, value);
+                install(key, value, args);
             }
             else if (strcmp(directive, UNDEF) == 0) {
                 getword(&line, key);
@@ -122,7 +127,7 @@ nlist *lookup(char *s) {
 *
 * Returns: A pointer to the nlist item
 */
-nlist *install(char *name, char *defn) {
+nlist *install(char *name, char *defn, char **args) {
     nlist *np;
     unsigned hashval;
 
@@ -134,10 +139,16 @@ nlist *install(char *name, char *defn) {
         np->next = hashtab[hashval];  // pushes any names with the same hash
         hashtab[hashval] = np;        // value back and takes its place
     }
-    else                              // already there
+    else {                            // already there
         free((void*)np->defn);  // free previous defn
-    if ((np->defn = strdup2(defn)) == NULL)
+        np->args = NULL;
+    }
+    if ((np->defn = strdup2(defn)) == NULL) {
+        np->args = NULL;
         return NULL;
+    }
+    else
+        np->args = args;
     return np;
 }
 
@@ -156,6 +167,44 @@ char *strdup2(char *s) {
 }
 
 /**
+ * checkargs: Checks string s (name of a defined key) for any argument inputs
+ *   and puts the variable names into a string array. Cuts out the arguments
+ *   from the key name.
+ *
+ * Returns: String array of variable names
+ */
+char **checkargs(char *s) {
+    char *args = strchr(s, '(');
+    if (args == NULL)       // no arguments in this key!
+        return NULL;
+    *args++ = '\0';         // cut off the key name
+    int numargs = 0;        // just in case it's empty between the ()
+    char **argnames = malloc(sizeof(char*));
+    for (args; *args != ')'; args++) {  // can stop when a ')' is found
+        trim(&args);
+        if (isalnum(*args) || *args == '_') {
+            numargs++;
+            argnames = realloc(argnames, sizeof(char*) * numargs);
+            *argnames = malloc(sizeof(char[STRLEN]));
+            int i;
+            for (i = 0; i < STRLEN && (isalnum(*args) || *args == '_');
+                                                                i++, args++) {
+                argnames[numargs - 1][i] = *args;
+            }
+            argnames[numargs - 1][i] = '\0';
+            trim(&args);
+            if (*args == ',')
+                args++;
+        }
+        else {
+            printf("ERROR: Improper arg names for '%s'\n", s);
+            return NULL;    // dunno what else to do with improper arg names
+        }
+    }
+    return argnames;
+}
+
+/**
 * undef: Removes a name and definition from the hashtab table
 */
 void undef(char *name) {
@@ -171,6 +220,7 @@ void undef(char *name) {
                     hashtab[hashval] = NULL;
                 else
                     prev->next = np->next;
+                free(np);  // free memory space
                 break;
             }
             prev = np;
@@ -183,10 +233,10 @@ void undef(char *name) {
 */
 void trim(char **line) {
     while (isspace(*(*line)++));
-    *(*line)--;  // go back a space to account for overshoot
-    char *start = *line;  // save start position
-    while (*start++ != '\0');  // go to end of line
-    *start--;  // go back a space to account for overshoot
+    *(*line)--;                 // go back a space to account for overshoot
+    char *start = *line;        // save start position
+    while (*start++ != '\0');   // go to end of line
+    *start--;                   // go back a space to account for overshoot
     while (isspace(*start--));
     if (isspace(*start))
         *start = '\0';
