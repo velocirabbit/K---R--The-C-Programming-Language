@@ -1,4 +1,4 @@
-/* 06E05.c (p. 145) */
+/* 06E06.c (p. 145) */
 #define _CRT_SECURE_NO_WARNINGS
 #include <ctype.h>
 #include <stdio.h>
@@ -70,11 +70,11 @@ int main(void) {
 }
 
 /**
- * getword: Gets the next word from string line and stores it into string w.
- *   Advanced pointer to string line past the word.
- *
- * Returns: The number of characters pulled (excluding null character)
- */
+* getword: Gets the next word from string line and stores it into string w.
+*   Advanced pointer to string line past the word.
+*
+* Returns: The number of characters pulled (excluding null character)
+*/
 int getword(char **line, char *w) {
     int c = 0;
     trim(line);
@@ -87,12 +87,12 @@ int getword(char **line, char *w) {
 }
 
 /**
- * hash: Forms a hash value for string s, to be used as an index value in the
- *   hashtab array. This uses the Rabin-Karp rolling hash with init and a
- *   values as implemented in K&R.
- *
- * Returns: An unsigned int to be used as an index value in the hashtab array.
- */
+* hash: Forms a hash value for string s, to be used as an index value in the
+*   hashtab array. This uses the Rabin-Karp rolling hash with init and a
+*   values as implemented in K&R.
+*
+* Returns: An unsigned int to be used as an index value in the hashtab array.
+*/
 unsigned hash(char *s) {
     unsigned hashval = HASHINIT;
 
@@ -102,10 +102,10 @@ unsigned hash(char *s) {
 }
 
 /**
- * lookup: Look for hash value s in hashtab.
- *
- * Returns: pointer to the nlist item
- */
+* lookup: Look for hash value s in hashtab.
+*
+* Returns: pointer to the nlist item
+*/
 nlist *lookup(char *s) {
     nlist *np;
 
@@ -118,10 +118,10 @@ nlist *lookup(char *s) {
 }
 
 /**
- * install: Puts the defined name and its definition into the hashtab
- *
- * Returns: A pointer to the nlist item
- */
+* install: Puts the defined name and its definition into the hashtab
+*
+* Returns: A pointer to the nlist item
+*/
 nlist *install(char *name, char *defn) {
     nlist *np;
     unsigned hashval;
@@ -142,10 +142,10 @@ nlist *install(char *name, char *defn) {
 }
 
 /**
- * strdup: Makes a dupilcate of string s into a new address locaiton
- *
- * Returns: Pointer to duplicate string
- */
+* strdup: Makes a dupilcate of string s into a new address locaiton
+*
+* Returns: Pointer to duplicate string
+*/
 char *strdup2(char *s) {
     char *p;
 
@@ -156,8 +156,8 @@ char *strdup2(char *s) {
 }
 
 /**
- * undef: Removes a name and definition from the hashtab table
- */
+* undef: Removes a name and definition from the hashtab table
+*/
 void undef(char *name) {
     nlist *np;
     if ((np = lookup(name)) == NULL)
@@ -179,8 +179,8 @@ void undef(char *name) {
 }
 
 /**
- * trim: Removes whitespace characters from the front and back of the line
- */
+* trim: Removes whitespace characters from the front and back of the line
+*/
 void trim(char **line) {
     while (isspace(*(*line)++));
     *(*line)--;  // go back a space to account for overshoot
