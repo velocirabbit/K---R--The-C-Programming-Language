@@ -1,4 +1,5 @@
 /* 06E06.c (p. 145) */
+/**TODO: Arguments list should be checking the value string, not the key string **/
 #define _CRT_SECURE_NO_WARNINGS
 #include <ctype.h>
 #include <stdio.h>
@@ -17,15 +18,17 @@ typedef struct s_nlist {  // table entry:
     char *name;             // defined name
     char *defn;             // replacement text
     char **args;            // variable names
+    int numvars;            // number of variables
 } nlist;
 static nlist *hashtab[HASHSIZE];  // pointer table
 
 int getword(char **line, char *w);
 unsigned hash(char *s);  // hashing function
 nlist *lookup(char *s);  // lookup function
-nlist *install(char *name, char *defn, char **args);
+nlist *install(char *name, char *defn, char **args, int numvars);
 char *strdup2(char *s);
-char **checkargs(char *s);
+char *insertargs(char *s, char **argnames, char **argvals, int numvars);
+int checkargs(char *s, char ***argsarr);
 void undef(char *name);
 void trim(char **line);
 
@@ -40,24 +43,31 @@ int main(void) {
             // Look up a defined key
             getword(&line, key);
             nlist *np;
-            if ((np = lookup(key)) == NULL)
-                printf("Could not find a key name '%s'\n", key);
-            else {
-                //TODO: Check for args and put into value
-                for (np; np != NULL; np = np->next)
-                    if (strcmp(np->name, key) == 0)
-                        printf("\t%s\n", np->defn);
+            char **args;
+            int numvars;
+            if ((numvars = checkargs(key, &args)) == 0) {
+                if ((np = lookup(key)) == NULL)
+                    printf("Could not find a key name '%s'\n", key);
+                else {
+                    for (np; np != NULL; np = np->next)
+                        if (strcmp(np->name, key) == 0)
+                            printf("\t%s\n", np->defn);
+
+                }
             }
+            else
+                printf("\t%s\n", insertargs(np->defn, np->args, args, np->numvars));
         }
         else if (getword(&line, directive) > 0) {
             // Execute a directive
             if (strcmp(directive, DEFINE) == 0) {
                 char **args;
+                int numvars;
                 getword(&line, key);
-                args = checkargs(key);
+                numvars = checkargs(key, &args);
                 trim(&line);
                 strcpy(value, line);
-                install(key, value, args);
+                install(key, value, args, numvars);
             }
             else if (strcmp(directive, UNDEF) == 0) {
                 getword(&line, key);
@@ -127,7 +137,7 @@ nlist *lookup(char *s) {
 *
 * Returns: A pointer to the nlist item
 */
-nlist *install(char *name, char *defn, char **args) {
+nlist *install(char *name, char *defn, char **args, int numvars) {
     nlist *np;
     unsigned hashval;
 
@@ -147,8 +157,10 @@ nlist *install(char *name, char *defn, char **args) {
         np->args = NULL;
         return NULL;
     }
-    else
+    else {
         np->args = args;
+        np->numvars = numvars;
+    }
     return np;
 }
 
@@ -167,16 +179,62 @@ char *strdup2(char *s) {
 }
 
 /**
+ * insertargs: Finds in string s each of the variable names in string array
+ *   argnames and replaces them with their corresponding value that they share
+ *   an index with in argvals. argnames and argvals should contain the same
+ *   number of strings.
+ *
+ * Returns: A new string with the variable names replaced with their values
+ */
+char *insertargs(char *s, char **argnames, char **argvals, int numvars) {
+    char *newstr = malloc(sizeof(char[STRLEN]));
+    int i, j;  // i for newstr, j for s
+    for (i = j = 0; s[j] != '\0'; i++, j++) {
+        if (isalnum(s[j]) || s[j] == '_') {
+            char *var = malloc(sizeof(char[STRLEN]));
+            int found = -1;
+            int v;
+            for (v = 0; isalnum(s[j + v]) || s[j + v] == '_'; v++)
+                var[v] = s[j + v];
+            for (int a = 0; a; a++)
+                if (strcmp(var, argnames[a]) == 0) {
+                    found = a;
+                    break;
+                }
+            if (found == -1) {
+                for (i, j; isalnum(s[j]) || s[j] == '_'; i++, j++)
+                    newstr[i] = s[j];
+            }
+            else {
+                for (int a = 0; argvals[found][a] != '\0'; a++, i++)
+                    newstr[i] = argvals[found][a];
+                j += v;
+            }
+            i--;
+            j--;
+            free(var);
+        }
+        else
+            newstr[i] = s[j];
+    }
+    newstr[i] = '\0';
+    return newstr;
+}
+
+/**
  * checkargs: Checks string s (name of a defined key) for any argument inputs
  *   and puts the variable names into a string array. Cuts out the arguments
- *   from the key name.
+ *   from the key name. Stores the string array of variable names into the
+ *   specified string array
  *
- * Returns: String array of variable names
+ * Returns: Number of arguments found
  */
-char **checkargs(char *s) {
+int checkargs(char *s, char ***argsarr) {
     char *args = strchr(s, '(');
-    if (args == NULL)       // no arguments in this key!
-        return NULL;
+    if (args == NULL) {       // no arguments in this key!
+        *argsarr = NULL;
+        return 0;
+    }
     *args++ = '\0';         // cut off the key name
     int numargs = 0;        // just in case it's empty between the ()
     char **argnames = malloc(sizeof(char*));
@@ -187,10 +245,8 @@ char **checkargs(char *s) {
             argnames = realloc(argnames, sizeof(char*) * numargs);
             *argnames = malloc(sizeof(char[STRLEN]));
             int i;
-            for (i = 0; i < STRLEN && (isalnum(*args) || *args == '_');
-                                                                i++, args++) {
+            for (i = 0; i < STRLEN && (isalnum(*args) || *args == '_'); i++, args++)
                 argnames[numargs - 1][i] = *args;
-            }
             argnames[numargs - 1][i] = '\0';
             trim(&args);
             if (*args == ',')
@@ -198,10 +254,13 @@ char **checkargs(char *s) {
         }
         else {
             printf("ERROR: Improper arg names for '%s'\n", s);
-            return NULL;    // dunno what else to do with improper arg names
+            *argsarr = NULL;
+            return 0;    // dunno what else to do with improper arg names
         }
     }
-    return argnames;
+
+    *argsarr = argnames;
+    return numargs;
 }
 
 /**
