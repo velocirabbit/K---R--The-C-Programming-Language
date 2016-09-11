@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Function macros */
+#define ISHEX(c)    (isdigit(c) || (tolower(c) >= 'a' && tolower(c) <= 'f'))
+#define HEXVAL(c)   (isdigit(c) ? c - '0' : 10 + tolower(c) - 'a')
+
 #define CONVCHAR    '%'  // indicates a conversion character sequence to follow
 /* Basic scanf conversion characters */
 #define DECIMAL     'd'  // deciaml integer
@@ -44,7 +48,7 @@ int minscanf(char *format, ...) {
             bool match = False;
             bool suppress = False;
             bool alttype = False;
-            bool init = True;
+            int maxwidth;
             while (!match) {
                 char fs = *++p;
                 switch (fs) {
@@ -54,57 +58,93 @@ int minscanf(char *format, ...) {
                     case 'h': case 'l': case 'L':
                         alttype = True;
                         break;
-                    case 'd':
+                    case 'd': case 'i': case 'o': case 'x': case 'X': case 'u':
                     {
-                        int v;
-                        if (isdigit(c))
-                            v = c - '0';
-                        while (isdigit(c = getchar())) {
-                            v *= 10;
-                            v += c - '0';
+                        int v = 0;
+                        bool neg = False;
+                        bool octal = (fs == 'o') ? True : False;
+                        bool hexa = (tolower(fs) == 'x') ? True : False;
+                        if (fs != 'u' && c == '-') {
+                            neg = True;
+                            c = getchar();
                         }
+                        if (fs == 'i' && !octal && !hexa) {
+                            if (c == '0') {
+                                c = getchar();
+                                if (tolower(c) == 'x')
+                                    hexa = True;
+                                else if (isdigit(c)) {
+                                    octal = True;
+                                    v = c - '0';
+                                }
+                            }
+                            else if (isdigit(c))
+                                v = c - '0';
+                            else
+                                break;
+                        }
+                        else if (isdigit(c))
+                            v = c - '0';
+                        else
+                            break;
+                        if (hexa) {
+                            c = getchar();
+                            while (ISHEX(c)) {
+                                v *= 16;
+                                v += HEXVAL(c);
+                            }
+                        }
+                        else
+                            while (isdigit(c = getchar())) {
+                                v *= octal ? 8 : 10;
+                                v += c - '0';
+                            }
                         if (!alttype) {
                             int *val = va_arg(ap, int*);
-                            *val = v;
+                            *val = (neg ? -1 : 1) * v;
+                            *val = (fs == 'u') ? (unsigned)*val : *val;
                         }
                         else {
                             short *val = va_arg(ap, short*);
-                            *val = (short)v;
+                            *val = (short)(neg ? -1 : 1) * (short)v;
+                            *val = (fs == 'u') ? (unsigned)*val : *val;
                         }
                         match = True;
-                        matched++;
                         break;
                     }
-                    case 'i':
+                    case 'c':
                     {
-                        if (init && c == '0') {
-                            c = getchar();
-                            if (c == 'x' || c == 'X')
-                                fs = 'x';
-                            else
-                                fs = 'o';
-                        }
-                        if (!isdigit(c = getchar()))
-                            break;
+                        char *val = va_arg(ap, char*);
+                        *val = getchar();
+                        match = True;
+                        break;
                     }
-                    case 'o':
+                    case 's':
                     {
-                        if (fs == 'o') {
-
-                        }
-                    }
-                    case 'x': case 'X':
-                    {
-                        if (fs == 'x' || fs == 'X') {
-
-                        }
+                        char *val = va_arg(ap, char*);
+                        if (!isblank(c))
+                            *val++ = c;
+                        while (!isblank(c = getchar()))
+                            *val++ = c;
+                        *val = '\0';
+                        match = True;
+                        break;
                     }
                     default:
                     {
-
+                        // Get max field width
+                        if (isdigit(fs)) {
+                            maxwidth = fs - '0';
+                            while (isdigit((fs = *++p))) {
+                                maxwidth *= 10;
+                                maxwidth += fs - '0';
+                            }
+                            p--;
+                        }
                     }
                 }
-                init = False;
+                if (match)
+                    matched++;
             }
         }
         else if (isspace(*p) || *p == c)
