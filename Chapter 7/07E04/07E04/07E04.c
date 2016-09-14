@@ -27,6 +27,28 @@ typedef enum { False = 0, True } bool;
 int minscanf(char *format, ...);
 
 int main(void) {
+    int dtest = 0, itest = 0, otest = 0, htest = 0;
+    short dalttest = 0;
+    unsigned int utest = 0, ualttest = 0;
+    char ctest;
+    char stest[100];
+    float etest, ftest, gtest;
+    double falttest;
+
+    printf("Input '%%d and %%i': ");
+    minscanf("%d and %i", &dtest, &itest);
+    printf("\n\nInput '%%o or %%x': ");
+    minscanf("%o or %x", &otest, &htest);
+    printf("\n\nInput some unsigned: ");
+    minscanf("some %u", &utest);
+    printf("\n\nAnother two ints: ");
+    minscanf("%hd %hu", &dalttest, &ualttest);
+
+    printf("-------\nPRINTING:\n\n");
+    printf("%d, %i, 0%o, 0x%x\n", dtest, itest, otest, htest);
+    printf("%hd, %u, %hu\n", dalttest, utest, ualttest);
+
+
     return 0;
 }
 
@@ -37,9 +59,9 @@ int minscanf(char *format, ...) {
 
     int matched = 0;
     char *p;
+    char c = getchar();
     for (p = format; *p; p++) {
         // read characters from standard input
-        int c = getchar();
         if (c == EOF)
             return c;
         else if (*p == '%') {
@@ -71,34 +93,25 @@ int minscanf(char *format, ...) {
                         if (fs == 'i' && !octal && !hexa) {
                             if (c == '0') {
                                 c = getchar();
-                                if (tolower(c) == 'x')
+                                if (tolower(c) == 'x') {
                                     hexa = True;
-                                else if (isdigit(c)) {
-                                    octal = True;
-                                    v = c - '0';
+                                    c = getchar();
                                 }
+                                else if (isdigit(c))
+                                    octal = True;
                             }
-                            else if (isdigit(c))
-                                v = c - '0';
                             else
                                 break;
                         }
-                        else if (isdigit(c))
-                            v = c - '0';
-                        else
-                            break;
-                        if (hexa) {
-                            c = getchar();
-                            while (ISHEX(c)) {
-                                v *= 16;
-                                v += HEXVAL(c);
+                        else if (isdigit(c) || hexa) {
+                            v = (hexa && ISHEX(c)) ? HEXVAL(c) : c - '0';
+                            while (isdigit(c = getchar()) || ISHEX(c)) {
+                                v *= (hexa && ISHEX(c)) ? 16 : (octal ? 8 : 10);
+                                v += (hexa && ISHEX(c)) ? HEXVAL(c) : c - '0';
                             }
                         }
                         else
-                            while (isdigit(c = getchar())) {
-                                v *= octal ? 8 : 10;
-                                v += c - '0';
-                            }
+                            break;
                         if (!alttype) {
                             int *val = va_arg(ap, int*);
                             *val = (neg ? -1 : 1) * v;
@@ -115,7 +128,7 @@ int minscanf(char *format, ...) {
                     case 'c':
                     {
                         char *val = va_arg(ap, char*);
-                        *val = getchar();
+                        *val = c;
                         match = True;
                         break;
                     }
@@ -130,6 +143,60 @@ int minscanf(char *format, ...) {
                         match = True;
                         break;
                     }
+                    case 'e': case 'f': case 'g':
+                    {
+                        float left = 0.0, right = 0.0;
+                        bool neg = False;
+                        if (c == '-') {
+                            neg = True;
+                            c = getchar();
+                        }
+                        if (isdigit(c))
+                            left += c - '0';
+                        while (isdigit(c = getchar())) {
+                            left *= 10.0;
+                            left += c - '0';
+                        }
+                        if (c == '.') {
+                            int count = 0;
+                            while (isdigit(c = getchar())) {
+                                count++;
+                                right *= 10.0;
+                                right += c - '0';
+                            }
+                            for (count; count > 0; count--)
+                                right /= 10.0;
+                            left += right;
+                        }
+                        int exp = 0;
+                        bool negexp = False;
+                        if (tolower(c) == 'e') {
+                            if (c == '-') {
+                                negexp = True;
+                                c = getchar();
+                            }
+                            while (isdigit(c = getchar())) {
+                                exp *= 10;
+                                exp += c - '0';
+                            }
+                        }
+                        for (exp; exp > 0; exp--)
+                            left = (float)(negexp ? left / 10.0 : left * 10.0);
+                        if (!alttype) {
+                            float *val = va_arg(ap, float*);
+                            *val = left;
+                        }
+                        else {
+                            double *val = va_arg(ap, double*);
+                            *val = (double)left;
+                        }
+                        match = True;
+                        break;
+                    }
+                    case '%':
+                        if (c == '%')
+                            continue;
+                        break;
                     default:
                     {
                         // Get max field width
@@ -147,11 +214,13 @@ int minscanf(char *format, ...) {
                     matched++;
             }
         }
-        else if (isspace(*p) || *p == c)
+        else if (isspace(*p) || *p == c) {
             // If the next char isn't a part of a format specifier, then check
             // to see if it matches the next character in the format string.
             // If it matches exactly, move on to the next one. If not, break
+            c = getchar();
             continue;
+        }
         else
             break;
     }
